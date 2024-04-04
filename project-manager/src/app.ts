@@ -15,15 +15,22 @@ class Project {
 
 
 // Project State Management
-type Listener = (items: Project[]) => void;
+type Listener<T> = (items: T[]) => void;
 
-class ProjectState {
-    private listeners: Listener[] = [];
+class State <T> {
+    protected listeners: Listener<T>[] = [];
+
+    addListener(listenerFn: Listener<T>){
+        this.listeners.push(listenerFn);
+    }
+}
+
+class ProjectState extends State<Project> {
     private projects: any[] = [];
     private static instance: ProjectState;
 
     private constructor() {
-
+        super();
     };
 
     static getInstance() {
@@ -34,16 +41,14 @@ class ProjectState {
         return this.instance;
     }
 
-    addListener(listenerFn: Listener){
-        this.listeners.push(listenerFn);
-    }
-
     addProject(title: string, description: string, numOfPeople: number){
-        const newProject = new Project(Math.random().toString(),
+        const newProject = new Project(
+        Math.random().toString(),
        title,
        description,
        numOfPeople,
-       ProjectStatus.Active );
+       ProjectStatus.Active
+       );
         this.projects.push(newProject);
         for (const listenerFn of this.listeners){
             listenerFn(this.projects.slice());
@@ -204,9 +209,7 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
             ) as HTMLInputElement;
         this.peopleInputElement = this.element.querySelector(
             '#people'
-            ) as HTMLInputElement;
-
-        
+            ) as HTMLInputElement;        
         this.configure();
     }
 
@@ -214,9 +217,7 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
         this.element.addEventListener('submit', this.submitHandler);
     }
 
-    renderContent(): void {
-        
-    }
+    renderContent(): void {}
 
     private gatherUserInput(): [string, string, number] | void{
 
