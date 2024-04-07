@@ -223,7 +223,11 @@ implements DragTarget {
 
     dropHandler(_: DragEvent) {};
 
-    dragLeaveHandler(_: DragEvent) {};
+    @autobind
+    dragLeaveHandler(_: DragEvent) {
+        const listEl = this.element.querySelector('ul')!;
+        listEl.classList.remove('droppable');
+    };
 
     configure(): void {
         this.element.addEventListener('dragover', this.dragOverHandler);
