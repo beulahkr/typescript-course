@@ -1,5 +1,6 @@
 //Drag & Drop Interfaces
 //Draggable: Project items
+
 interface Draggable {
     dragStartHandler(event: DragEvent): void;
     dragEndHandler(event: DragEvent): void;
@@ -18,6 +19,7 @@ enum ProjectStatus {
     Finished
 }
 
+//project class
 class Project {
     constructor(
         public id: string, 
@@ -64,6 +66,20 @@ class ProjectState extends State<Project> {
        ProjectStatus.Active
        );
         this.projects.push(newProject);
+       this.updateListeners();
+    }
+
+    moveProject(projectId: string, newStatus: ProjectStatus) {
+       const project = this.projects.find(prj => prj.id === projectId );
+
+       if(project && project.status !== newStatus){
+        project.status = newStatus;
+        this.updateListeners();
+       }
+
+    }
+
+    private updateListeners(){
         for (const listenerFn of this.listeners){
             listenerFn(this.projects.slice());
         }
@@ -87,7 +103,8 @@ interface Validatable{
 function validate(validatableInput: Validatable){
     let isValid = true;
     if(validatableInput.required){
-        isValid = isValid && validatableInput.value.toString().trim().length !== 0;
+        isValid = 
+            isValid && validatableInput.value.toString().trim().length !== 0;
     }
     if(validatableInput.minLength != null && typeof validatableInput.value === 'string') {
         isValid = 
@@ -98,10 +115,12 @@ function validate(validatableInput: Validatable){
             isValid && validatableInput.value.length <= validatableInput.maxLength;
     }
     if(validatableInput.min != null && typeof validatableInput.value === 'number'){
-        isValid = isValid && validatableInput.value >= validatableInput.min;
+        isValid = 
+            isValid && validatableInput.value >= validatableInput.min;
     }
     if(validatableInput.max != null && typeof validatableInput.value === 'number'){
-        isValid = isValid && validatableInput.value <= validatableInput.max;
+        isValid = 
+            isValid && validatableInput.value <= validatableInput.max;
     }
     return isValid;
 }
@@ -184,10 +203,13 @@ class ProjectItem extends Component <HTMLUListElement, HTMLLIElement >
         this.configure();
         this.renderContent();
     }
+   
     @autobind
     dragStartHandler(event: DragEvent){
-        console.log(event)
+        event.dataTransfer!.setData('text/plain', this.project.id);
+        event.dataTransfer!.effectAllowed = 'move';
     }
+
     dragEndHandler(_: DragEvent){
         console.log('DragEnd')
     }
@@ -215,13 +237,20 @@ implements DragTarget {
         this.configure();
         this.renderContent();
     }
-    @autobind
-    dragOverHandler(_: DragEvent) {
-        const listEl = this.element.querySelector('ul')!;
-        listEl.classList.add('droppable');
-    };
 
-    dropHandler(_: DragEvent) {};
+    @autobind
+    dragOverHandler(event: DragEvent) {
+        if(event.dataTransfer && event.dataTransfer.types[0] === 'text/plain') {
+            event.preventDefault();
+            const listEl = this.element.querySelector('ul')!;
+            listEl.classList.add('droppable');
+        }  
+    };
+    @autobind
+    dropHandler(event: DragEvent) {
+        const prjId = event.dataTransfer!.getData('text/plain');
+        projectState.moveProject(prjId, this.type === 'active' ? ProjectStatus.Active : ProjectStatus.Finished)
+    };
 
     @autobind
     dragLeaveHandler(_: DragEvent) {
